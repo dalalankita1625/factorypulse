@@ -1,0 +1,7 @@
+export type Plant = { id:number; code:string; name:string; region:string }
+export type Machine = { id:number; plant_id:number; code:string; name:string; line:string; plant_name?:string; produced?:number; defects?:number; target?:number; downtime_minutes?:number; availability_pct?:number; defect_rate_pct?:number; target_achievement_pct?:number; production_cost?:number; output_rank?:number }
+export type Filters = { plants:Plant[]; machines:Machine[] }
+export type Summary = { period:{from:string;to:string}; data_label:string; kpis:{produced:number;defects:number;target:number;downtime:number;planned:number;cost:number;machines:number;days:number;availability_pct:number;defect_rate_pct:number;target_achievement_pct:number} }
+export type Trend = { production_date:string; produced:number; defects:number; target:number; downtime:number; planned:number; cost:number; availability_pct:number; defect_rate_pct:number; rolling_7d_target_pct:number }
+export type MachineDay = { production_date:string; units_produced:number; defect_units:number; target_units:number; downtime_minutes:number; availability_pct:number; defect_rate_pct:number; target_achievement_pct:number; production_cost:number }
+export type Alert = { id:number; alert_type:string; severity:string; status:string; message:string; first_seen_at:string; last_seen_at:string; machine_id:number; machine_code:string; machine_name:string; line:string; plant_name:string }

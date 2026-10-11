@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-factorypulse}
+      POSTGRES_USER: ${POSTGRES_USER:-factorypulse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factorypulse_dev}
+    ports: ["5432:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-factorypulse} -d ${POSTGRES_DB:-factorypulse}"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://factorypulse:factorypulse_dev@db:5432/factorypulse}
+      CORS_ORIGINS: http://localhost:5173
+    ports: ["${API_PORT:-8000}:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api/v1}
+    ports: ["5173:80"]
+    depends_on: [api]
+
+  superset:
+    image: apache/superset:4.1.1
+    profiles: ["bi"]
+    environment:
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-local-development-secret-change-me}
+      SUPERSET_LOAD_EXAMPLES: "no"
+    ports: ["8088:8088"]
+    volumes:
+      - superset_home:/app/superset_home
+    command: ["/bin/sh", "-c", "pip install psycopg2-binary && superset db upgrade && (superset fab create-admin --username admin --firstname Factory --lastname Pulse --email admin@example.com --password admin || true) && superset init && superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger"]
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  postgres_data:
+  superset_home:
